@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const Axios = require('axios');
 const qs = require('qs');
 const fs = require('fs');
+const mqtt = require('mqtt');
 
 const host = 'dfappnewgw-pro.pateo.com.cn';
 const baseUrl = 'https://' + host;
@@ -54,4 +55,31 @@ const login = async (loginId, password) => {
     }
 }
 
-module.exports = { login };
+// mqtt
+const mqttConnect = async (vin) => {
+    const client = mqtt.connect('wss://dfemq-pro.pateo.com.cn/mqtt', {
+        username: 'dfgroup',
+        password: '7wDyMv0V',
+        clientId: vin
+    })
+    // clientId = n.carInfo.defaultCar.vin LGJE1EE07KM774568
+    client.on('connect', function () {
+        console.log(vin, '连接到mqtt')
+        client.subscribe(vin + '/IVI/TSP', error => {
+            if (error) {
+                console.error(error)
+                return
+            }
+            // 订阅成功
+            console.log(vin, 'topic订阅成功')
+        })
+    })
+    client.on('message', function (topic, message) {
+        // message is Buffer
+        console.log(topic, JSON.parse(message.toString()))
+        // TODO 请求到回调地址
+    })
+    client.on('error', console.error)
+}
+
+module.exports = { login, mqttConnect };
